@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOT-AGI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08131d;
+      --panel: rgba(10, 24, 35, 0.88);
+      --panel-strong: rgba(7, 17, 25, 0.96);
+      --line: rgba(140, 183, 196, 0.18);
+      --line-strong: rgba(182, 218, 230, 0.28);
+      --text: #edf7f8;
+      --muted: #9fb6bf;
+      --accent: #f66c42;
+      --accent-soft: rgba(246, 108, 66, 0.16);
+      --accent-2: #44c89f;
+      --accent-2-soft: rgba(68, 200, 159, 0.16);
+      --yellow: #f5c842;
+      --yellow-soft: rgba(245, 200, 66, 0.16);
+      --pink: #e8579a;
+      --pink-soft: rgba(232, 87, 154, 0.16);
+      --shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top right, rgba(246, 108, 66, 0.14), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(68, 200, 159, 0.12), transparent 30%),
+        linear-gradient(180deg, #0b1924 0%, #071118 48%, #04090d 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    body {
+      padding: 24px 18px 64px;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      gap: 18px;
+    }
+
+    /* ── Shared panel ───────────────────────────────────────── */
+
+    .panel {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), transparent 22%),
+        var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+      padding: 32px 36px;
+    }
+
+    @media (max-width: 600px) {
+      .panel { padding: 24px 22px; }
+    }
+
+    /* ── Section label ──────────────────────────────────────── */
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      padding: 7px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font: 500 0.75rem/1 "IBM Plex Mono", monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .eyebrow .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Divider ────────────────────────────────────────────── */
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--line);
+      margin: 28px 0;
+    }
+
+    /* ── HERO ───────────────────────────────────────────────── */
+
+    .hero-logo {
+      font-size: clamp(2.8rem, 8vw, 5.2rem);
+      font-weight: 700;
+      letter-spacing: -0.06em;
+      line-height: 0.92;
+      margin: 0 0 18px;
+      background: linear-gradient(135deg, #edf7f8 30%, #9fb6bf 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-tagline {
+      margin: 0;
+      font-size: clamp(1rem, 2.4vw, 1.3rem);
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 560px;
+    }
+
+    .hero-tagline em {
+      font-style: normal;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ── ABOUT ──────────────────────────────────────────────── */
+
+    .about-text {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 640px;
+    }
+
+    .about-text strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ── TASKS ──────────────────────────────────────────────── */
+
+    .task-card {
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) - 4px);
+      overflow: hidden;
+      background: rgba(3, 10, 15, 0.60);
+    }
+
+    .task-gif {
+      width: 100%;
+      /* aspect-ratio: 16 / 9; */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at center, rgba(246,108,66,0.07), transparent 60%),
+        rgba(4, 9, 14, 0.80);
+      color: var(--muted);
+      font: 500 0.82rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.06em;
+      min-height: 220px;
+    }
+
+    .task-gif img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .task-gif-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.45;
+    }
+
+    .task-gif-placeholder svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .task-footer {
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+    }
+
+    .task-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .task-meta {
+      font: 400 0.78rem/1 "IBM Plex Mono", monospace;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    /* ── Buttons ────────────────────────────────────────────── */
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font: 600 0.85rem/1 "Space Grotesk", sans-serif;
+      text-decoration: none;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:hover  { filter: brightness(1.12); }
+    .btn:active { transform: scale(0.97); }
+
+    .btn-yellow {
+      background: var(--yellow-soft);
+      border-color: rgba(245, 200, 66, 0.35);
+      color: var(--yellow);
+    }
+
+    .btn-pink {
+      background: var(--pink-soft);
+      border-color: rgba(232, 87, 154, 0.35);
+      color: var(--pink);
+    }
+
+    /* ── LEADERBOARD ────────────────────────────────────────── */
+
+    .coming-soon-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font: 500 0.82rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.06em;
+    }
+
+    .coming-soon-badge .pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 10px rgba(68, 200, 159, 0.55);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+
+    /* ── CONTRIBUTE ─────────────────────────────────────────── */
+
+    .contribute-body {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .contribute-text {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ── HERO ─────────────────────────────────────────────── -->
+    <section class="panel">
+      <h1 class="hero-logo">BOT-AGI</h1>
+      <p class="hero-tagline">
+        The ultimate intelligence benchmark is not games.<br>
+        <em>It's physical ability.</em>
+      </p>
+    </section>
+
+    <!-- ── ABOUT ─────────────────────────────────────────────── -->
+    <section class="panel">
+      <div class="eyebrow">
+        <span class="dot" style="background: linear-gradient(135deg, var(--accent), #ffc14d); box-shadow: 0 0 14px rgba(246,108,66,0.5);"></span>
+        About
+      </div>
+      <p class="about-text">
+        How good are the leading models at controlling robots?<br><br>
+        <strong>BOT-AGI-1</strong> is an independent robotics benchmark, with tasks that humans can easily solve.
+      </p>
+    </section>
+
+    <!-- ── TASKS ─────────────────────────────────────────────── -->
+    <section class="panel">
+      <div class="eyebrow">
+        <span class="dot" style="background: linear-gradient(135deg, var(--yellow), #ffa94d); box-shadow: 0 0 14px rgba(245,200,66,0.5);"></span>
+        Tasks
+      </div>
+
+      <div class="task-card">
+        <div class="task-gif">
+          <!-- Replace src with actual GIF path when available -->
+          <img src="assets/g1_cube.png" alt="Unitree G1 cube task simulation">
+          <!-- <div class="task-gif-placeholder">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="8" y="8" width="32" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
+              <polygon points="20,16 20,32 34,24" fill="currentColor"/>
+            </svg>
+            <span>G1 cube task — gif coming soon</span>
+          </div> -->
+        </div>
+        <div class="task-footer">
+          <div>
+            <div class="task-name">Unitree G1 — Cube Pickup</div>
+            <div class="task-meta">MuJoCo simulation</div>
+          </div>
+          <a class="btn btn-yellow" href="tasks/g1_cube.html">
+            Try demo task
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <p style="margin: 20px 0 0; color: var(--muted); font: 500 0.82rem/1 'IBM Plex Mono', monospace; letter-spacing: 0.05em;">
+        Full benchmark coming soon
+      </p>
+    </section>
+
+    <!-- ── LEADERBOARD ───────────────────────────────────────── -->
+    <section class="panel">
+      <div class="eyebrow">
+        <span class="dot" style="background: linear-gradient(135deg, var(--accent-2), #38b2f0); box-shadow: 0 0 14px rgba(68,200,159,0.5);"></span>
+        Leaderboard
+      </div>
+      <div class="coming-soon-badge">
+        <span class="pulse"></span>
+        Coming soon
+      </div>
+    </section>
+
+    <!-- ── CONTRIBUTE ────────────────────────────────────────── -->
+    <section class="panel">
+      <div class="eyebrow">
+        <span class="dot" style="background: linear-gradient(135deg, var(--pink), #c052e8); box-shadow: 0 0 14px rgba(232,87,154,0.5);"></span>
+        Contribute
+      </div>
+      <div class="contribute-body">
+        <p class="contribute-text">
+          Interested in contributing tasks, evaluations, or model results to BOT-AGI-1?
+        </p>
+        <a class="btn btn-pink" href="mailto:team@bot-agi.org">
+          Get in touch
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M1 4.5l6 4 6-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
