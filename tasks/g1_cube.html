@@ -158,6 +158,92 @@
       letter-spacing: 0.05em;
     }
 
+    /* ── Success popup + confetti ──────────────────────────────── */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      background: rgba(3, 10, 15, 0.55);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .success-overlay.show {
+      display: flex;
+      pointer-events: auto;
+      animation: overlayFade 0.25s ease;
+    }
+    @keyframes overlayFade { from { opacity: 0; } to { opacity: 1; } }
+
+    .success-popup {
+      border: 1px solid rgba(68, 200, 159, 0.55);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(68, 200, 159, 0.22), transparent 40%),
+        var(--panel-strong);
+      box-shadow: 0 28px 90px rgba(0, 0, 0, 0.5), 0 0 60px rgba(68, 200, 159, 0.25);
+      padding: 28px 36px;
+      text-align: center;
+      min-width: 280px;
+      animation: popIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    }
+    @keyframes popIn {
+      0%   { transform: scale(0.6); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .success-popup h2 {
+      margin: 0 0 14px;
+      font-size: 1.6rem;
+      letter-spacing: -0.03em;
+      color: #7fe2be;
+    }
+    .success-popup dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto auto;
+      gap: 6px 18px;
+      justify-content: center;
+      font: 500 0.95rem/1.3 "IBM Plex Mono", monospace;
+    }
+    .success-popup dt { color: var(--muted); text-align: right; }
+    .success-popup dd { margin: 0; color: var(--text); text-align: left; }
+    .success-popup .dismiss {
+      margin-top: 18px;
+      border: 1px solid rgba(68, 200, 159, 0.5);
+      background: rgba(68, 200, 159, 0.14);
+      color: #a8efd1;
+      border-radius: 999px;
+      padding: 8px 18px;
+      font: 500 0.8rem/1 "IBM Plex Mono", monospace;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+    .success-popup .dismiss:hover {
+      background: rgba(68, 200, 159, 0.22);
+    }
+
+    .confetti-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 9998;
+    }
+    .confetti-piece {
+      position: absolute;
+      top: -20px;
+      width: 8px;
+      height: 14px;
+      opacity: 0.95;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(-20px) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(720deg); }
+    }
+
     .viewport-shell {
       width: min(100%, 780px);
       margin: 0 auto;
@@ -732,6 +818,18 @@
     </aside>
   </div>
 
+  <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+  <div class="success-overlay" id="success-overlay" role="dialog" aria-modal="true">
+    <div class="success-popup">
+      <h2>Task Solved</h2>
+      <dl>
+        <dt>Time</dt><dd id="success-time">--</dd>
+        <dt>Actions taken</dt><dd id="success-actions">--</dd>
+      </dl>
+      <button type="button" class="dismiss" id="success-dismiss">Dismiss</button>
+    </div>
+  </div>
+
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -749,6 +847,36 @@
     const leftTargetBadgeEl = document.getElementById("left-target-badge");
     const rightTargetBadgeEl = document.getElementById("right-target-badge");
     const successBadgeEl = document.getElementById("success-badge");
+    const successOverlayEl = document.getElementById("success-overlay");
+    const successTimeEl = document.getElementById("success-time");
+    const successActionsEl = document.getElementById("success-actions");
+    const successDismissEl = document.getElementById("success-dismiss");
+    const confettiLayerEl = document.getElementById("confetti-layer");
+
+    const CONFETTI_COLORS = ["#f66c42", "#44c89f", "#f5c842", "#e8579a", "#38b2f0", "#edf7f8"];
+    function launchConfetti(count = 140) {
+      confettiLayerEl.innerHTML = "";
+      for (let i = 0; i < count; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = `${Math.random() * 100}vw`;
+        piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+        const duration = 2.4 + Math.random() * 2.2;
+        piece.style.animationDuration = `${duration}s`;
+        piece.style.animationDelay = `${Math.random() * 0.5}s`;
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confettiLayerEl.appendChild(piece);
+        setTimeout(() => piece.remove(), (duration + 1) * 1000);
+      }
+    }
+    function hideSuccessPopup() {
+      successOverlayEl.classList.remove("show");
+      confettiLayerEl.innerHTML = "";
+    }
+    successDismissEl.addEventListener("click", hideSuccessPopup);
+    successOverlayEl.addEventListener("click", (e) => {
+      if (e.target === successOverlayEl) hideSuccessPopup();
+    });
     const cameraModeBadgeEl = document.getElementById("camera-mode-badge");
     const canvas = document.getElementById("sim-canvas");
 
@@ -1316,6 +1444,9 @@
         this.isPaused = false;
         this.cameraMode = "orbit";
         this.lastAction = "RESET";
+        this.actionCount = 0;
+        this.sessionStartMs = performance.now();
+        this.wasSolved = false;
         this.frameCounter = 0;
         this.lastFpsTick = performance.now();
         this.lastRenderTime = 0;
@@ -1751,6 +1882,10 @@
         this.applyCtrl();
         this.lastAction = "RESET";
         lastActionEl.textContent = this.lastAction;
+        this.actionCount = 0;
+        this.sessionStartMs = performance.now();
+        this.wasSolved = false;
+        hideSuccessPopup();
         successBadgeEl.textContent = "Task not solved";
         successBadgeEl.classList.remove("success");
         successBadgeEl.classList.add("warn");
@@ -1764,6 +1899,7 @@
         }
         this.lastAction = actionName;
         lastActionEl.textContent = this.lastAction;
+        this.actionCount += 1;
         this.applyAction(actionId);
         this.solveArmIK("left");
         this.solveArmIK("right");
@@ -2148,6 +2284,15 @@
         successBadgeEl.classList.toggle("success", solved);
         successBadgeEl.classList.toggle("warn", !solved);
         setTaskStatus(this.isPaused ? "Paused" : (solved ? "Solved heuristic" : "Ready"));
+
+        if (solved && !this.wasSolved) {
+          const elapsedSec = (performance.now() - this.sessionStartMs) / 1000;
+          successTimeEl.textContent = `${elapsedSec.toFixed(1)}s`;
+          successActionsEl.textContent = `${this.actionCount}`;
+          successOverlayEl.classList.add("show");
+          launchConfetti();
+        }
+        this.wasSolved = solved;
 
         this.frameCounter += 1;
         if (now - this.lastFpsTick >= 1000) {
